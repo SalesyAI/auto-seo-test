@@ -27,27 +27,69 @@ Rules:
 - Output ONLY valid JSON, no additional text`;
 
 export async function generateSeoArticle(rawText: string): Promise<OllamaResponse> {
-  const baseUrl = process.env.OLLAMA_BASE_URL;
+  const baseUrl = process.env.OLLAMA_BASE_URL || 'https://ollama.com/api/chat';
   const apiKey = process.env.OLLAMA_API_KEY;
   const model = process.env.OLLAMA_MODEL || 'gemma4:31b-cloud';
   
   console.log('Ollama config:', { baseUrl, hasApiKey: !!apiKey, model });
 
-  const response = await fetch(baseUrl!, {
+  const requestBody = {
+    model: model,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: rawText },
+    ],
+    stream: false,
+  };
+
+  console.log('Calling Ollama at:', baseUrl);
+
+  const response = await fetch(baseUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: model,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: rawText },
-      ],
-      stream: false,
-    }),
+    body: JSON.stringify(requestBody),
   });
+
+if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log('Ollama response data keys:', Object.keys(data));
+  
+  let content = '';
+  if (data.message?.content) {
+    content = data.message.content;
+  } else if (data.choices?.[0]?.message?.content) {
+    content = data.choices[0].message.content;
+  } else if (data.response?.message?.content) {
+    content = data.response.message.content;
+  } else {
+    throw new Error('No content in Ollama response');
+  }
+
+  console.log('Extracted content:', content.substring(0, 100) + '...');
+
+  try {
+    const parsed = JSON.parse(content);
+    return {
+      slug: parsed.slug || '',
+      title: parsed.title || '',
+      excerpt: parsed.excerpt || '',
+      tag: parsed.tag || 'Automation',
+      content: parsed.content || '',
+      seoTitle: parsed.seoTitle || parsed.title || '',
+      seoDescription: parsed.seoDescription || parsed.excerpt || '',
+      readTime: parsed.readTime || '5 min read',
+    };
+  } catch {
+    throw new Error('Failed to parse Ollama response as JSON: ' + content.substring(0, 200));
+  }
+}
 
   if (!response.ok) {
     throw new Error(`Ollama API error: ${response.statusText}`);

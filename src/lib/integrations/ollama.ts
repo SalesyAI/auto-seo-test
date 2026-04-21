@@ -75,7 +75,14 @@ export async function generateSeoArticle(rawText: string): Promise<OllamaRespons
   console.log('Extracted content:', content.substring(0, 100) + '...');
 
   try {
-    const parsed = JSON.parse(content);
+    let cleanContent = content.trim();
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.replace(/^```\n?/, '').replace(/\n?```$/, '');
+    }
+    
+    const parsed = JSON.parse(cleanContent);
     return {
       slug: parsed.slug || '',
       title: parsed.title || '',

@@ -53,7 +53,7 @@ export async function generateSeoArticle(rawText: string): Promise<OllamaRespons
     body: JSON.stringify(requestBody),
   });
 
-if (!response.ok) {
+  if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
   }
@@ -88,29 +88,5 @@ if (!response.ok) {
     };
   } catch {
     throw new Error('Failed to parse Ollama response as JSON: ' + content.substring(0, 200));
-  }
-}
-
-  if (!response.ok) {
-    throw new Error(`Ollama API error: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  const content = data.message?.content || data.response?.message?.content || '';
-
-  try {
-    const parsed = JSON.parse(content);
-    return {
-      slug: parsed.slug || '',
-      title: parsed.title || '',
-      excerpt: parsed.excerpt || '',
-      tag: parsed.tag || 'Automation',
-      content: parsed.content || '',
-      seoTitle: parsed.seoTitle || parsed.title || '',
-      seoDescription: parsed.seoDescription || parsed.excerpt || '',
-      readTime: parsed.readTime || '5 min read',
-    };
-  } catch {
-    throw new Error('Failed to parse Ollama response as JSON');
   }
 }

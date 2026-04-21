@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/publish?secret=YOUR_CRON_SECRET_HERE",
-      "schedule": "0 15 * * *"
+      "schedule": "15 16 * * *"
     }
   ]
 }

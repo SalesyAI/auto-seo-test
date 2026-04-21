@@ -14,19 +14,26 @@ export async function GET(request: Request) {
   }
 
   try {
+    console.log('Starting publish process...');
+    
     const article = await getPendingArticle();
+    console.log('Pending article:', article);
 
     if (!article) {
       return NextResponse.json({ success: true, message: 'No pending articles found' });
     }
 
+    console.log('Calling Ollama API...');
     const seoArticle = await generateSeoArticle(article.rawText);
+    console.log('Ollama response:', seoArticle);
 
+    console.log('Adding to published sheet...');
     await addPublishedArticle({
       ...seoArticle,
       publishedAt: new Date().toISOString(),
     });
 
+    console.log('Marking as processed...');
     await markArticleAsProcessed(article.rowId);
 
     revalidatePath('/blog');
@@ -42,8 +49,10 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Publish error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : '';
     return NextResponse.json(
-      { success: false, message: error instanceof Error ? error.message : 'Unknown error' },
+      { success: false, message: errorMessage, stack: errorStack },
       { status: 500 }
     );
   }

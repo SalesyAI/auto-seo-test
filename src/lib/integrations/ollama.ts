@@ -27,14 +27,20 @@ Rules:
 - Output ONLY valid JSON, no additional text`;
 
 export async function generateSeoArticle(rawText: string): Promise<OllamaResponse> {
-  const response = await fetch(process.env.OLLAMA_BASE_URL!, {
+  const baseUrl = process.env.OLLAMA_BASE_URL;
+  const apiKey = process.env.OLLAMA_API_KEY;
+  const model = process.env.OLLAMA_MODEL || 'gemma4:31b-cloud';
+  
+  console.log('Ollama config:', { baseUrl, hasApiKey: !!apiKey, model });
+
+  const response = await fetch(baseUrl!, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.OLLAMA_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.OLLAMA_MODEL || 'gemma4:31b-cloud',
+      model: model,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: rawText },
